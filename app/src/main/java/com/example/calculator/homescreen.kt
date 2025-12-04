@@ -24,7 +24,7 @@ import androidx.navigation.NavController
 // 화면 이동을 위한 경로 정의 (Next.js의 page 파일명과 비슷)
 object Routes {
     const val HOME = "home"
-    const val LOGIN = "login"
+
     const val CALCULATOR = "calculator"
     const val PRESETS = "presets"
     const val CALENDAR = "calendar"
@@ -89,7 +89,7 @@ fun HomeScreen(navController: NavController) {
 
             // --- 시작하기 버튼 ---
             Button(
-                onClick = { navController.navigate(Routes.LOGIN) }, // Link href="/login"
+                onClick = { navController.navigate(Routes.CALCULATOR) }, // Link href="/login"
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp), // h-14
@@ -117,13 +117,6 @@ fun HomeScreen(navController: NavController) {
                     )
 
                     // 메뉴 리스트 아이템들 (Link 컴포넌트 반복을 함수로 분리)
-                    NavigationItem(
-                        title = "로그인",
-                        subtitle = "로그인 화면",
-                        icon = Icons.Default.Dashboard,
-                        iconColor = MaterialTheme.colorScheme.primary,
-                        onClick = { navController.navigate(Routes.LOGIN) }
-                    )
 
                     NavigationItem(
                         title = "메인 계산기",
@@ -162,7 +155,6 @@ fun HomeScreen(navController: NavController) {
     }
 }
 
-// Next.js의 Link 안쪽 디자인을 재사용 가능한 컴포넌트로 분리
 @Composable
 fun NavigationItem(
     title: String,
