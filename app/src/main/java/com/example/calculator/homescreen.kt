@@ -1,4 +1,4 @@
-package com.example.stockcalculator.com.example.calculator // 패키지명은 본인 프로젝트에 맞게 수정
+package com.example.stockcalculator.com.example.calculator
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

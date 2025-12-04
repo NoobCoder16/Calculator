@@ -1,9 +1,12 @@
-package com.example.stockcalculator
+package com.example.stockcalculator.com.example.calculator
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -53,17 +56,6 @@ fun AppNavigation() {
     val calculatorViewModel: CalculatorViewModel = viewModel()
     val settingsViewModel: SettingsViewModel = viewModel()
     val settings by settingsViewModel.settings.collectAsState()
-
-    // Apply Language
-    val context = androidx.compose.ui.platform.LocalContext.current
-    LaunchedEffect(settings.language) {
-        val locale = java.util.Locale(settings.language)
-        java.util.Locale.setDefault(locale)
-        val config = context.resources.configuration
-        config.setLocale(locale)
-        context.createConfigurationContext(config)
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
-    }
 
     // Bottom Navigation Items
     val items = listOf(

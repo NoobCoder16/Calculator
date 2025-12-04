@@ -2,11 +2,10 @@ package com.example.stockcalculator.com.example.calculator
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-class `StockStorage.kt`(context: Context) {
+class StockStorage(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("stock_prefs", Context.MODE_PRIVATE)
     private val gson = Gson()
 
@@ -40,3 +39,4 @@ class `StockStorage.kt`(context: Context) {
         prefs.edit().putString("asset_history", json).apply()
     }
 }
+

@@ -59,58 +59,6 @@ fun SettingsScreen(
 
             Divider()
 
-            // Language Setting
-            SettingItem(title = "언어 설정") {
-                Column(Modifier.selectableGroup()) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .selectable(
-                                selected = settings.language == "ko",
-                                onClick = { viewModel.setLanguage("ko") },
-                                role = Role.RadioButton
-                            )
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = settings.language == "ko",
-                            onClick = null // null recommended for accessibility with selectable
-                        )
-                        Text(
-                            text = "한국어",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                    }
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .selectable(
-                                selected = settings.language == "en",
-                                onClick = { viewModel.setLanguage("en") },
-                                role = Role.RadioButton
-                            )
-                            .padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = settings.language == "en",
-                            onClick = null
-                        )
-                        Text(
-                            text = "English",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                    }
-                }
-            }
-
-            Divider()
-
             // Font Size Setting
             SettingItem(title = "글자 크기") {
                 Column {

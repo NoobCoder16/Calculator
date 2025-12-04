@@ -1,5 +1,4 @@
 package com.example.stockcalculator.com.example.calculator
-
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,7 +9,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class `CalculatorViewModel.kt`(application: Application) : AndroidViewModel(application) {
+class CalculatorViewModel(application: Application) : AndroidViewModel(application) {
     private val storage = StockStorage(application)
 
     private val _stocks = MutableStateFlow<List<Stock>>(emptyList())
