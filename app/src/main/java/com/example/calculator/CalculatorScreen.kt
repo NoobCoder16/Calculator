@@ -211,7 +211,3 @@ fun AddStockDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Uni
     )
 }
 
-fun formatCurrency(amount: Double): String {
-    val format = NumberFormat.getCurrencyInstance(Locale.KOREA)
-    return format.format(amount)
-}

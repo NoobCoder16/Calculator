@@ -104,7 +104,7 @@ fun PortfolioScreen(viewModel: CalculatorViewModel) {
                                     .height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("데이터가 없습니다", color = Color.Gray)
+                                Text("데이터가 없습니다", color = Color.Black)
                             }
                         }
                     }
@@ -158,7 +158,7 @@ fun PortfolioScreen(viewModel: CalculatorViewModel) {
                                     .height(200.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("데이터가 부족합니다 (최소 2개)", color = Color.Gray)
+                                Text("데이터가 부족합니다 (최소 2개)", color = Color.Black)
                             }
                         }
                     }

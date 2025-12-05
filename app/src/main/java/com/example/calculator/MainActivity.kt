@@ -68,8 +68,8 @@ fun AppNavigation() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
-            // Hide bottom bar on settings screen
-            if (currentRoute != "settings") {
+            // Hide bottom bar on settings screen and homescreen
+            if (currentRoute != "settings" && currentRoute != "home") {
                 NavigationBar {
                     items.forEach { item ->
                         NavigationBarItem(
@@ -93,9 +93,12 @@ fun AppNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "calculator",
+            startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(route = "home") {
+                HomeScreen(navController = navController)
+            }
             composable("calculator") {
                 CalculatorScreen(
                     viewModel = calculatorViewModel,
