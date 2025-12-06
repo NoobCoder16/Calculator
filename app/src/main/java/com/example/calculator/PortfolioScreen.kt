@@ -22,6 +22,7 @@ import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PortfolioScreen(viewModel: CalculatorViewModel) {
@@ -96,6 +97,7 @@ fun PortfolioScreen(viewModel: CalculatorViewModel) {
                                 contentAlignment = Alignment.Center
                             ) {
                                 PieChart(stocks = stocks, totalAssets = totalAssets, colors = stockColors)
+
                             }
                         } else {
                             Box(
@@ -111,15 +113,19 @@ fun PortfolioScreen(viewModel: CalculatorViewModel) {
                 }
             }
 
-            // Stock List (Legend)
+            // Stock List (Legend) - 수정된 부분
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     stocks.forEach { stock ->
+                        // 1. 퍼센트 계산 로직 추가
+                        val percentage = if (totalAssets > 0) (stock.currentValue / totalAssets) * 100 else 0.0
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            // 왼쪽: 색상 박스 + 종목명
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
@@ -129,11 +135,21 @@ fun PortfolioScreen(viewModel: CalculatorViewModel) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(stock.name, style = MaterialTheme.typography.bodyMedium)
                             }
-                            Text(
-                                formatCurrency(stock.currentValue),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+
+                            // 오른쪽: 금액 + 퍼센트 (Column으로 묶어서 표시)
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = formatCurrency(stock.currentValue),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                // 2. 퍼센트 텍스트 표시 추가
+                                Text(
+                                    text = String.format("%.1f%%", percentage), // 소수점 1자리까지 표시 (예: 12.5%)
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray // 금액보다 흐리게 표시하여 구분
+                                )
+                            }
                         }
                     }
                 }
@@ -190,7 +206,7 @@ fun PieChart(stocks: List<Stock>, totalAssets: Double, colors: Map<String, Color
             startAngle += sweepAngle
         }
 
-        // Inner circle for donut effect (optional, but looks better)
+        // Inner circle for donut effect
         drawCircle(
             color = Color.White,
             radius = radius * 0.6f,
@@ -213,7 +229,7 @@ fun AssetHistoryChart(history: List<AssetHistory>) {
         val graphHeight = size.height - padding * 2
 
         val maxAsset = history.maxOf { it.totalAssets }
-        val minAsset = history.minOf { it.totalAssets } * 0.9 // Start slightly below min
+        val minAsset = history.minOf { it.totalAssets } * 0.9
         val assetRange = maxAsset - minAsset
 
         // Draw Axes
