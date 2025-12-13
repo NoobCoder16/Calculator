@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.calculator.CalendarScreen
 import com.example.stockcalculator.ui.theme.StockCalculatorTheme
 
 class MainActivity : ComponentActivity() {
@@ -60,7 +62,8 @@ fun AppNavigation() {
     // Bottom Navigation Items
     val items = listOf(
         BottomNavItem("계산기", "calculator", androidx.compose.material.icons.Icons.Default.Home),
-        BottomNavItem("포트폴리오", "portfolio", androidx.compose.material.icons.Icons.Default.Info)
+        BottomNavItem("포트폴리오", "portfolio", androidx.compose.material.icons.Icons.Default.Info),
+        BottomNavItem("캘린더", "calendar", androidx.compose.material.icons.Icons.Default.DateRange)
     )
 
     Scaffold(
@@ -112,6 +115,19 @@ fun AppNavigation() {
                 SettingsScreen(
                     viewModel = settingsViewModel,
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+            composable(route = "calendar") {
+                CalendarScreen(
+                    onBackClick = {
+                        navController.navigate("calculator") {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
         }
