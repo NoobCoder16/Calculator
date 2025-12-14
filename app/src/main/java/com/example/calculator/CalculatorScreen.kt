@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -25,6 +24,7 @@ import java.util.Locale
 fun CalculatorScreen(
     viewModel: CalculatorViewModel,
     onSettingsClick: () -> Unit
+    // [수정 2] onPresetClick 파라미터 제거 (이제 하단 바로 이동하니까)
 ) {
     val stocks by viewModel.stocks.collectAsState()
     val totalAssets by viewModel.totalAssets.collectAsState()
@@ -35,8 +35,9 @@ fun CalculatorScreen(
             TopAppBar(
                 title = { Text("메인 계산기") },
                 actions = {
+                    // [수정 2] 상단바에서 프리셋 아이콘 버튼 제거
                     IconButton(onClick = onSettingsClick) {
-                        Icon(androidx.compose.material.icons.Icons.Default.Settings, contentDescription = "설정")
+                        Icon(Icons.Default.Settings, contentDescription = "설정")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -56,7 +57,6 @@ fun CalculatorScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // Total Assets Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -76,7 +76,6 @@ fun CalculatorScreen(
                 }
             }
 
-            // Stock List
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -102,16 +101,15 @@ fun CalculatorScreen(
     }
 }
 
+// ... (아래 StockItem, AddStockDialog 등은 기존과 동일하므로 생략. 기존 파일 내용 유지) ...
+// (기존 CalculatorScreen.kt 파일의 나머지 부분은 그대로 두세요)
 @Composable
 fun StockItem(stock: Stock, totalAssets: Double, onDelete: () -> Unit) {
-    // Calculate difference based on target ratio
     val targetValue = totalAssets * (stock.targetRatio / 100)
     val diff = targetValue - stock.currentValue
-    val diffColor = if (diff >= 0) Color(0xFF4CAF50) else Color(0xFFE57373) // Green or Red
+    val diffColor = if (diff >= 0) Color(0xFF4CAF50) else Color(0xFFE57373)
 
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    Card(elevation = CardDefaults.cardElevation(2.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -126,19 +124,12 @@ fun StockItem(stock: Stock, totalAssets: Double, onDelete: () -> Unit) {
                     Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color.Gray)
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(text = "현재 평가액", style = MaterialTheme.typography.bodyMedium)
                 Text(text = formatCurrency(stock.currentValue), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             }
-
             Spacer(modifier = Modifier.height(8.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -167,12 +158,7 @@ fun AddStockDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Uni
         title = { Text("종목 추가") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("주식 이름") },
-                    singleLine = true
-                )
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("주식 이름") }, singleLine = true)
                 OutlinedTextField(
                     value = ratio,
                     onValueChange = { ratio = it },
@@ -194,24 +180,11 @@ fun AddStockDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Uni
                 onClick = {
                     val r = ratio.toDoubleOrNull()
                     val v = value.toDoubleOrNull()
-                    if (name.isNotBlank() && r != null && v != null) {
-                        onAdd(name, r, v)
-                    }
+                    if (name.isNotBlank() && r != null && v != null) onAdd(name, r, v)
                 },
                 enabled = name.isNotBlank() && ratio.isNotBlank() && value.isNotBlank()
-            ) {
-                Text("저장")
-            }
+            ) { Text("저장") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
-            }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
-}
-
-private fun formatCurrency(value: Double): String {
-    val formatter = NumberFormat.getNumberInstance(Locale.KOREA)
-    return formatter.format(value) + "원"
 }

@@ -1,16 +1,12 @@
 package com.example.stockcalculator.com.example.calculator
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.UUID
-import org.json.JSONArray
-import org.json.JSONObject
 
 class CalculatorViewModel(application: Application) : AndroidViewModel(application) {
     private val storage = StockStorage(application)
@@ -24,17 +20,22 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _assetHistory = MutableStateFlow<List<AssetHistory>>(emptyList())
     val assetHistory: StateFlow<List<AssetHistory>> = _assetHistory.asStateFlow()
 
+    private val _presets = MutableStateFlow<List<PortfolioPreset>>(emptyList())
+    val presets: StateFlow<List<PortfolioPreset>> = _presets.asStateFlow()
+
+    // [NEW] 캘린더 이벤트 리스트
+    private val _events = MutableStateFlow<List<CalendarEvent>>(emptyList())
+    val events: StateFlow<List<CalendarEvent>> = _events.asStateFlow()
+
     init {
         loadData()
     }
 
     private fun loadData() {
-        val savedStocks = storage.getStocks()
-        _stocks.value = savedStocks
-
-        val savedHistory = storage.getAssetHistory()
-        _assetHistory.value = savedHistory
-
+        _stocks.value = storage.getStocks()
+        _assetHistory.value = storage.getAssetHistory()
+        _presets.value = storage.getPresets()
+        _events.value = storage.getEvents() // 이벤트 불러오기
         calculateTotalAssets()
     }
 
@@ -50,138 +51,68 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         storage.saveAssetHistory(currentHistory)
     }
 
+    // --- 주식 ---
     fun addStock(name: String, targetRatio: Double, currentValue: Double) {
-        val newStock = Stock(
-            id = UUID.randomUUID().toString(),
-            name = name,
-            targetRatio = targetRatio,
-            currentValue = currentValue
-        )
-        val updatedList = _stocks.value + newStock
-        _stocks.value = updatedList
-        storage.saveStocks(updatedList)
+        val newStock = Stock(UUID.randomUUID().toString(), name, targetRatio, currentValue)
+        val updated = _stocks.value + newStock
+        _stocks.value = updated
+        storage.saveStocks(updated)
         calculateTotalAssets()
         recordAssetHistory()
     }
 
     fun deleteStock(stockId: String) {
-        val updatedList = _stocks.value.filter { it.id != stockId }
-        _stocks.value = updatedList
-        storage.saveStocks(updatedList)
+        val updated = _stocks.value.filter { it.id != stockId }
+        _stocks.value = updated
+        storage.saveStocks(updated)
         calculateTotalAssets()
         recordAssetHistory()
     }
-}
 
-data class Stock(
-    val id: String,          // 고유 ID (UUID 등)
-    val name: String,        // 종목 이름
-    val targetRatio: Double, // 목표 비중 (%)
-    val currentValue: Double // 현재 평가액 (원)
-)
+    // --- 프리셋 ---
+    fun loadPreset(preset: PortfolioPreset) {
+        val newStocks = preset.stocks.map { it.copy(id = UUID.randomUUID().toString()) }
+        _stocks.value = newStocks
+        storage.saveStocks(newStocks)
+        calculateTotalAssets()
+        recordAssetHistory()
+    }
 
-data class AssetHistory(
-    val timestamp: Long,     // 기록 시각 (epoch millis)
-    val totalAssets: Double  // 그 시점의 총 자산 값
-)
+    fun addPreset(name: String, description: String, selectedStocks: List<Stock>) {
+        val newPreset = PortfolioPreset(UUID.randomUUID().toString(), name, description, selectedStocks)
+        val updated = listOf(newPreset) + _presets.value
+        _presets.value = updated
+        storage.savePresets(updated)
+    }
 
-class StockStorage(app: Application) {
-
-    private val prefs = app.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-
-    fun getStocks(): List<Stock> {
-        val json = prefs.getString(KEY_STOCKS, null) ?: return emptyList()
-        return try {
-            val array = JSONArray(json)
-            val result = mutableListOf<Stock>()
-            for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                val id = obj.optString("id", "")
-                val name = obj.optString("name", "")
-                val targetRatio = obj.optDouble("targetRatio", 0.0)
-                val currentValue = obj.optDouble("currentValue", 0.0)
-
-                if (id.isNotBlank() && name.isNotBlank()) {
-                    result.add(
-                        Stock(
-                            id = id,
-                            name = name,
-                            targetRatio = targetRatio,
-                            currentValue = currentValue
-                        )
-                    )
-                }
-            }
-            result
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+    fun updatePreset(presetId: String, newName: String, newStocks: List<Stock>) {
+        val currentList = _presets.value.toMutableList()
+        val index = currentList.indexOfFirst { it.id == presetId }
+        if (index != -1) {
+            val updated = currentList[index].copy(name = newName, stocks = newStocks, lastModified = System.currentTimeMillis())
+            currentList[index] = updated
+            _presets.value = currentList
+            storage.savePresets(currentList)
         }
     }
 
-    fun saveStocks(stocks: List<Stock>) {
-        try {
-            val array = JSONArray()
-            stocks.forEach { stock ->
-                val obj = JSONObject().apply {
-                    put("id", stock.id)
-                    put("name", stock.name)
-                    put("targetRatio", stock.targetRatio)
-                    put("currentValue", stock.currentValue)
-                }
-                array.put(obj)
-            }
-            prefs.edit().putString(KEY_STOCKS, array.toString()).apply()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    fun deletePreset(presetId: String) {
+        val updated = _presets.value.filter { it.id != presetId }
+        _presets.value = updated
+        storage.savePresets(updated)
     }
 
-    fun getAssetHistory(): List<AssetHistory> {
-        val json = prefs.getString(KEY_ASSET_HISTORY, null) ?: return emptyList()
-        return try {
-            val array = JSONArray(json)
-            val result = mutableListOf<AssetHistory>()
-            for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                val timestamp = obj.optLong("timestamp", 0L)
-                val totalAssets = obj.optDouble("totalAssets", 0.0)
-
-                if (timestamp > 0L) {
-                    result.add(
-                        AssetHistory(
-                            timestamp = timestamp,
-                            totalAssets = totalAssets
-                        )
-                    )
-                }
-            }
-            result
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
-        }
+    // --- [NEW] 캘린더 이벤트 관리 ---
+    fun addEvent(title: String, date: LocalDate) {
+        val newEvent = CalendarEvent(title = title, date = date)
+        val updated = _events.value + newEvent
+        _events.value = updated
+        storage.saveEvents(updated)
     }
 
-    fun saveAssetHistory(history: List<AssetHistory>) {
-        try {
-            val array = JSONArray()
-            history.forEach { item ->
-                val obj = JSONObject().apply {
-                    put("timestamp", item.timestamp)
-                    put("totalAssets", item.totalAssets)
-                }
-                array.put(obj)
-            }
-            prefs.edit().putString(KEY_ASSET_HISTORY, array.toString()).apply()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    companion object {
-        private const val PREF_NAME = "stock_calculator_prefs"
-        private const val KEY_STOCKS = "stocks"
-        private const val KEY_ASSET_HISTORY = "asset_history"
+    fun deleteEvent(event: CalendarEvent) {
+        val updated = _events.value.filter { it.id != event.id }
+        _events.value = updated
+        storage.saveEvents(updated)
     }
 }

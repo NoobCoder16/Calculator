@@ -1,4 +1,4 @@
-package com.example.calculator
+package com.example.stockcalculator.com.example.calculator // 패키지 확인!
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -26,38 +26,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.tooling.preview.Preview
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-
-// 데이터 모델
-data class CalendarEvent(
-    val id: Long = System.currentTimeMillis(),
-    val title: String,
-    val date: LocalDate
-)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
-    onBackClick: () -> Unit // 👈 뒤로가기 기능 받기
+    viewModel: CalculatorViewModel, // 👈 1. 뷰모델 받기
+    onBackClick: () -> Unit
 ) {
     // --- 상태 관리 ---
+    val events by viewModel.events.collectAsState() // 👈 2. 저장된 이벤트 불러오기
+
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var showAddDialog by remember { mutableStateOf(false) }
-
-    // [수정] 빈 목록으로 시작
-    val events = remember { mutableStateListOf<CalendarEvent>() }
 
     Scaffold(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, "추가")
                 Spacer(modifier = Modifier.width(8.dp))
@@ -71,7 +63,6 @@ fun CalendarScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // [수정] 헤더: 뒤로가기 버튼 + 제목
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -79,10 +70,7 @@ fun CalendarScreen(
                     .padding(bottom = 24.dp)
             ) {
                 IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "뒤로가기"
-                    )
+                    Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -92,7 +80,6 @@ fun CalendarScreen(
                 )
             }
 
-            // 달력 부분 (월 이동 및 그리드)
             CalendarView(
                 currentMonth = currentMonth,
                 onMonthChange = { currentMonth = it },
@@ -110,7 +97,6 @@ fun CalendarScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // 일정 목록
             val selectedEvents = events.filter { it.date == selectedDate }
 
             if (selectedEvents.isEmpty()) {
@@ -120,19 +106,14 @@ fun CalendarScreen(
                         .padding(top = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "등록된 일정이 없습니다.",
-                        color = Color.Gray
-                    )
+                    Text("등록된 일정이 없습니다.", color = Color.Gray)
                 }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(selectedEvents) { event ->
                         EventItem(
                             event = event,
-                            onDelete = { events.remove(event) }
+                            onDelete = { viewModel.deleteEvent(event) } // 👈 3. 삭제도 뷰모델에게 요청
                         )
                     }
                 }
@@ -140,21 +121,21 @@ fun CalendarScreen(
         }
     }
 
-    // 추가 다이얼로그
     if (showAddDialog) {
         AddEventDialog(
             initialDate = selectedDate,
             onDismiss = { showAddDialog = false },
             onConfirm = { title, date ->
-                events.add(CalendarEvent(title = title, date = date))
+                viewModel.addEvent(title, date) // 👈 4. 추가도 뷰모델에게 요청
                 showAddDialog = false
-                selectedDate = date // 추가한 날짜로 이동
+                selectedDate = date
             }
         )
     }
 }
 
-// --- 하위 컴포넌트들 (CalendarView, EventItem 등) ---
+// --- 아래 하위 컴포넌트들은 기존과 동일 (CalendarView, EventItem, AddEventDialog) ---
+// 복사 붙여넣기 편하게 포함시킴
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -328,14 +309,14 @@ fun AddEventDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { if (title.isNotBlank()) onConfirm(title, selectedDate) }) { Text("추가") }
+            Button(
+                onClick = { if (title.isNotBlank()) onConfirm(title, selectedDate) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) { Text("추가") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalendarScreenPreview() {
-    CalendarScreen(onBackClick = {})
 }
