@@ -1,3 +1,5 @@
+//CalculatorViewModel
+
 package com.example.stockcalculator.com.example.calculator
 
 import android.app.Application
@@ -23,7 +25,6 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
     private val _presets = MutableStateFlow<List<PortfolioPreset>>(emptyList())
     val presets: StateFlow<List<PortfolioPreset>> = _presets.asStateFlow()
 
-    // [NEW] 캘린더 이벤트 리스트
     private val _events = MutableStateFlow<List<CalendarEvent>>(emptyList())
     val events: StateFlow<List<CalendarEvent>> = _events.asStateFlow()
 
@@ -35,7 +36,7 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         _stocks.value = storage.getStocks()
         _assetHistory.value = storage.getAssetHistory()
         _presets.value = storage.getPresets()
-        _events.value = storage.getEvents() // 이벤트 불러오기
+        _events.value = storage.getEvents() 
         calculateTotalAssets()
     }
 
@@ -51,10 +52,20 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         storage.saveAssetHistory(currentHistory)
     }
 
-    // --- 주식 ---
     fun addStock(name: String, targetRatio: Double, currentValue: Double) {
         val newStock = Stock(UUID.randomUUID().toString(), name, targetRatio, currentValue)
         val updated = _stocks.value + newStock
+        _stocks.value = updated
+        storage.saveStocks(updated)
+        calculateTotalAssets()
+        recordAssetHistory()
+    }
+
+    fun updateStock(stockId: String, name: String, targetRatio: Double, currentValue: Double) {
+        val updated = _stocks.value.map { s ->
+            if (s.id == stockId) s.copy(name = name, targetRatio = targetRatio, currentValue = currentValue)
+            else s
+        }
         _stocks.value = updated
         storage.saveStocks(updated)
         calculateTotalAssets()
@@ -69,7 +80,6 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         recordAssetHistory()
     }
 
-    // --- 프리셋 ---
     fun loadPreset(preset: PortfolioPreset) {
         val newStocks = preset.stocks.map { it.copy(id = UUID.randomUUID().toString()) }
         _stocks.value = newStocks
@@ -102,7 +112,6 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
         storage.savePresets(updated)
     }
 
-    // --- [NEW] 캘린더 이벤트 관리 ---
     fun addEvent(title: String, date: LocalDate) {
         val newEvent = CalendarEvent(title = title, date = date)
         val updated = _events.value + newEvent
