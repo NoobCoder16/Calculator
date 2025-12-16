@@ -1,3 +1,5 @@
+//CalculatorScreen
+
 package com.example.stockcalculator.com.example.calculator
 
 import androidx.compose.foundation.layout.*
@@ -6,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -24,18 +27,18 @@ import java.util.Locale
 fun CalculatorScreen(
     viewModel: CalculatorViewModel,
     onSettingsClick: () -> Unit
-    // [수정 2] onPresetClick 파라미터 제거 (이제 하단 바로 이동하니까)
 ) {
     val stocks by viewModel.stocks.collectAsState()
     val totalAssets by viewModel.totalAssets.collectAsState()
+
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingStock by remember { mutableStateOf<Stock?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("메인 계산기") },
                 actions = {
-                    // [수정 2] 상단바에서 프리셋 아이콘 버튼 제거
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Default.Settings, contentDescription = "설정")
                     }
@@ -83,7 +86,8 @@ fun CalculatorScreen(
                     StockItem(
                         stock = stock,
                         totalAssets = totalAssets,
-                        onDelete = { viewModel.deleteStock(stock.id) }
+                        onDelete = { viewModel.deleteStock(stock.id) },
+                        onEdit = { editingStock = stock }
                     )
                 }
             }
@@ -98,13 +102,22 @@ fun CalculatorScreen(
                 }
             )
         }
+
+        editingStock?.let { s ->
+            EditStockDialog(
+                stock = s,
+                onDismiss = { editingStock = null },
+                onSave = { name, ratio, value ->
+                    viewModel.updateStock(s.id, name, ratio, value)
+                    editingStock = null
+                }
+            )
+        }
     }
 }
 
-// ... (아래 StockItem, AddStockDialog 등은 기존과 동일하므로 생략. 기존 파일 내용 유지) ...
-// (기존 CalculatorScreen.kt 파일의 나머지 부분은 그대로 두세요)
 @Composable
-fun StockItem(stock: Stock, totalAssets: Double, onDelete: () -> Unit) {
+fun StockItem(stock: Stock, totalAssets: Double, onDelete: () -> Unit, onEdit: () -> Unit) {
     val targetValue = totalAssets * (stock.targetRatio / 100)
     val diff = targetValue - stock.currentValue
     val diffColor = if (diff >= 0) Color(0xFF4CAF50) else Color(0xFFE57373)
@@ -120,8 +133,13 @@ fun StockItem(stock: Stock, totalAssets: Double, onDelete: () -> Unit) {
                     Text(text = stock.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(text = "목표 비중 ${stock.targetRatio}%", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color.Gray)
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "수정", tint = Color.Gray)
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color.Gray)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -158,7 +176,68 @@ fun AddStockDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Uni
         title = { Text("종목 추가") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("주식 이름") }, singleLine = true)
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("주식 이름") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+
+                OutlinedTextField(
+                    value = ratio,
+                    onValueChange = { ratio = it },
+                    label = { Text("목표 비중 (%)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = { Text("현재 평가액 (₩)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val r = ratio.replace(",", "").toDoubleOrNull()
+                    val v = value.replace(",", "").toDoubleOrNull()
+                    if (name.isNotBlank() && r != null && v != null) onAdd(name, r, v)
+                },
+                enabled = name.isNotBlank() && ratio.isNotBlank() && value.isNotBlank()
+            ) { Text("저장") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
+    )
+}
+
+@Composable
+fun EditStockDialog(
+    stock: Stock,
+    onDismiss: () -> Unit,
+    onSave: (String, Double, Double) -> Unit
+) {
+    var name by remember { mutableStateOf(stock.name) }
+    var ratio by remember { mutableStateOf(stock.targetRatio.toString()) }
+    var value by remember { mutableStateOf(stock.currentValue.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("종목 수정") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("주식 이름") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
                 OutlinedTextField(
                     value = ratio,
                     onValueChange = { ratio = it },
@@ -178,11 +257,10 @@ fun AddStockDialog(onDismiss: () -> Unit, onAdd: (String, Double, Double) -> Uni
         confirmButton = {
             Button(
                 onClick = {
-                    val r = ratio.toDoubleOrNull()
-                    val v = value.toDoubleOrNull()
-                    if (name.isNotBlank() && r != null && v != null) onAdd(name, r, v)
-                },
-                enabled = name.isNotBlank() && ratio.isNotBlank() && value.isNotBlank()
+                    val r = ratio.replace(",", "").toDoubleOrNull()
+                    val v = value.replace(",", "").toDoubleOrNull()
+                    if (name.isNotBlank() && r != null && v != null) onSave(name, r, v)
+                }
             ) { Text("저장") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
