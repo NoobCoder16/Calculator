@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp // dp 단위(픽셀 독립 단위)로 크기/
 import java.text.NumberFormat // (이 파일에는 직접 사용 안 보이지만) formatCurrency 구현에서 통화/숫자 포맷에 보통 사용.
 import java.util.Locale // (이 파일에는 직접 사용 안 보이지만) formatCurrency 구현에서 로케일(한국 등) 지정에 보통 사용.
 
-@OptIn(ExperimentalMaterial3Api::class) // Material3의 실험(Experimental) API(예: TopAppBar)를 쓰기 위해 “사용하겠다”라고 명시.
-@Composable // 이 함수가 “UI를 그리는 Compose 함수”임을 표시.
+@OptIn(ExperimentalMaterial3Api::class) // Material3의 실험(Experimental) API(예: TopAppBar)를 쓰기 위해 사용하겠다라고 명시.
+@Composable // 이 함수가 UI를 그리는 Compose 함수임을 표시.
 fun CalculatorScreen( // 메인 계산기 화면을 그리는 Composable 함수 시작.
     viewModel: CalculatorViewModel, // 화면이 참조할 ViewModel(데이터/로직 담당). UI는 직접 저장소를 만지지 않게 분리.
     onSettingsClick: () -> Unit // 설정 버튼을 눌렀을 때 실행할 콜백(대개 상위에서 네비게이션/화면이동 처리).
